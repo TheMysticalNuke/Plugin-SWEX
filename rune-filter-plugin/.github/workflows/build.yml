@@ -1,5 +1,6 @@
-name: Build ASAR
+name: Build ASAR Plugin
 
+# Workflow startet bei jedem Push oder manuell
 on:
   push:
     branches: [main]
@@ -8,24 +9,29 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repo
+      # Repo auschecken
+      - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Set up Node.js
+      # Node.js installieren
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '20'
 
+      # Abhängigkeiten installieren (asar)
       - name: Install asar
         run: npm install -g asar
 
+      # ASAR bauen
       - name: Build ASAR
         run: asar pack ./ ./rune_filter.asar
 
-      - name: Upload artifact
+      # ASAR als Artifact hochladen
+      - name: Upload ASAR
         uses: actions/upload-artifact@v3
         with:
           name: rune_filter.asar
           path: rune_filter.asar
-
