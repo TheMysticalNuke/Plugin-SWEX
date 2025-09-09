@@ -10,7 +10,7 @@ module.exports = {
     threshold: 6,
     importantSets: ["Violent", "Will", "Swift", "Fatal", "Rage"],
     speedPoints: 2,
-    effThreshold: 85,  // Prozent
+    effThreshold: 85,
     effPoints: 2,
     minUpgradeLevel: 6,
     exportFile: "rune_filter_results.csv"
@@ -22,13 +22,11 @@ module.exports = {
     let results = ["Slot,Set,Mainstat,Subs,Efficiency,Score,Decision,Details"];
 
     data.runes.forEach(rune => {
-      // Noch nicht genug geupgradet
       if (rune.upgrade_curr < settings.minUpgradeLevel) {
         log(`Rune Slot ${rune.slot} (${rune.set}) +${rune.upgrade_curr} → Warten auf Upgrade`);
         return;
       }
 
-      // Flat-Stats auf 2/4/6 -> Auto-Sell
       if ([2, 4, 6].includes(rune.slot)) {
         const flatMains = ["HP", "ATK", "DEF"];
         if (flatMains.includes(rune.pri_eff[0])) {
@@ -40,31 +38,25 @@ module.exports = {
       let points = 0;
       let details = [];
 
-      // Wichtiges Set
       if (settings.importantSets.includes(rune.set)) {
         points += 2;
         details.push("Set+2");
       }
 
-      // Effizienz
       if (rune.efficiency >= settings.effThreshold) {
         points += settings.effPoints;
         details.push(`Eff+${settings.effPoints}`);
       }
 
-      // Speed Substats
       const spdSub = rune.sec_eff.find(s => s[0] === "SPD");
       if (spdSub) {
         let spdPoints = settings.speedPoints;
-        spdPoints += Math.floor(spdSub[1] / 5); // extra Punkte je 5 SPD
-        if ([1, 3, 5].includes(rune.slot)) {
-          spdPoints = Math.round(spdPoints * 1.5);
-        }
+        spdPoints += Math.floor(spdSub[1] / 5);
+        if ([1, 3, 5].includes(rune.slot)) spdPoints = Math.round(spdPoints * 1.5);
         points += spdPoints;
         details.push(`SPD+${spdPoints}`);
       }
 
-      // Subs Bewertung
       const goodSubsList = ["SPD", "CRI Rate", "CRI Dmg", "ATK%", "HP%", "DEF%"];
       const goodSubs = rune.sec_eff.filter(s => goodSubsList.includes(s[0]));
       if (goodSubs.length >= 3) {
@@ -72,7 +64,6 @@ module.exports = {
         details.push("Subs+2");
       }
 
-      // Mainstat Regeln
       if (rune.slot === 6 && ["ACC", "RES"].includes(rune.pri_eff[0])) {
         if (!spdSub || spdSub[1] < 15) {
           log(`Rune Slot 6 (${rune.set}) +${rune.upgrade_curr} → SELL (ACC/RES ohne guten SPD)`);
@@ -91,18 +82,14 @@ module.exports = {
         }
       }
 
-      // Entscheidung
       const decision = points >= settings.threshold ? "KEEP" : "SELL";
 
-      // Log-Ausgabe mit Details
       log(`Rune Slot ${rune.slot} (${rune.set}) +${rune.upgrade_curr} → Score=${points} → ${decision} [${details.join(", ")}]`);
 
-      // CSV Export
       const subs = rune.sec_eff.map(s => `${s[0]}+${s[1]}`).join(" | ");
       results.push(`${rune.slot},${rune.set},${rune.pri_eff[0]}+${rune.pri_eff[1]},${subs},${rune.efficiency},${points},${decision},"${details.join(", ")}"`);
     });
 
-    // CSV schreiben
     const filePath = path.join(__dirname, settings.exportFile);
     fs.writeFileSync(filePath, results.join("\n"), "utf8");
 
