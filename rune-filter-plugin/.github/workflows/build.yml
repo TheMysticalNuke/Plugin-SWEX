@@ -1,1 +1,31 @@
+name: Build ASAR
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install asar
+        run: npm install -g asar
+
+      - name: Build ASAR
+        run: asar pack ./ ./rune_filter.asar
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: rune_filter.asar
+          path: rune_filter.asar
 
